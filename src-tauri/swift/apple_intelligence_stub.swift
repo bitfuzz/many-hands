@@ -2,14 +2,12 @@
 // Keep this file free of framework imports so it can compile on minimal
 // CommandLineTools setups where Foundation module resolution can fail.
 
-@frozen
 private struct StubAppleLLMResponse {
     var response: UnsafeMutablePointer<CChar>?
     var success: Int32
     var error_message: UnsafeMutablePointer<CChar>?
 }
 
-@frozen
 private struct StubSystemAudioCaptureResponse {
     var samples: UnsafeMutablePointer<Float>?
     var sample_count: UInt64
