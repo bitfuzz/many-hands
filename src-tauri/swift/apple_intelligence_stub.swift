@@ -5,6 +5,29 @@ import Foundation
 // does not support Apple Intelligence (e.g. older Xcode/SDK).
 
 private typealias ResponsePointer = UnsafeMutablePointer<AppleLLMResponse>
+private typealias SystemAudioResponsePointer = UnsafeMutablePointer<SystemAudioCaptureResponse>
+
+private func duplicateCString(_ text: String) -> UnsafeMutablePointer<CChar>? {
+    return text.withCString { basePointer in
+        guard let duplicated = strdup(basePointer) else {
+            return nil
+        }
+        return duplicated
+    }
+}
+
+private func makeSystemAudioErrorResponse(_ message: String) -> SystemAudioResponsePointer {
+    let responsePtr = SystemAudioResponsePointer.allocate(capacity: 1)
+    responsePtr.initialize(
+        to: SystemAudioCaptureResponse(
+            samples: nil,
+            sample_count: 0,
+            success: 0,
+            error_message: duplicateCString(message)
+        )
+    )
+    return responsePtr
+}
 
 @_cdecl("is_apple_intelligence_available")
 public func isAppleIntelligenceAvailable() -> Int32 {
@@ -41,5 +64,42 @@ public func freeAppleLLMResponse(_ response: UnsafeMutablePointer<AppleLLMRespon
         free(UnsafeMutablePointer(mutating: errorStr))
     }
     
+    response.deallocate()
+}
+
+@_cdecl("preflight_screen_capture_access")
+public func preflightScreenCaptureAccess() -> Int32 {
+    return 0
+}
+
+@_cdecl("request_screen_capture_access")
+public func requestScreenCaptureAccess() -> Int32 {
+    return 0
+}
+
+@_cdecl("start_system_audio_capture")
+public func startSystemAudioCapture() -> Int32 {
+    return 0
+}
+
+@_cdecl("stop_system_audio_capture")
+public func stopSystemAudioCapture() -> UnsafeMutablePointer<SystemAudioCaptureResponse> {
+    return makeSystemAudioErrorResponse("System audio capture is unavailable in this build.")
+}
+
+@_cdecl("free_system_audio_capture_response")
+public func freeSystemAudioCaptureResponse(
+    _ response: UnsafeMutablePointer<SystemAudioCaptureResponse>?
+) {
+    guard let response else { return }
+
+    if let samples = response.pointee.samples {
+        samples.deallocate()
+    }
+
+    if let errorStr = response.pointee.error_message {
+        free(UnsafeMutablePointer(mutating: errorStr))
+    }
+
     response.deallocate()
 }

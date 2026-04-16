@@ -6,7 +6,9 @@
     "unloadModel": "Dỡ mô hình",
     "model": "Mô hình",
     "quit": "Thoát",
-    "cancel": "Hủy"
+    "cancel": "Hủy",
+    "startMeetingRecording": "Start Meeting Recording",
+    "stopMeetingRecording": "Stop Meeting Recording"
   },
   "sidebar": {
     "general": "Chung",
@@ -194,6 +196,10 @@
           "transcribe_with_post_process": {
             "name": "Phím tắt xử lý sau",
             "description": "Tùy chọn: Phím tắt chuyên dụng luôn áp dụng xử lý sau bằng AI cho bản chuyển đổi của bạn."
+          },
+          "toggle_meeting_recording": {
+            "name": "Meeting Recording Hotkey",
+            "description": "Start or stop local meeting recording."
           }
         },
         "errors": {
@@ -213,6 +219,23 @@
       "pushToTalk": {
         "label": "Nhấn để nói",
         "description": "Giữ để ghi âm, thả để dừng"
+      },
+      "meeting": {
+        "audioSource": {
+          "title": "Meeting Audio Source",
+          "description": "Choose which audio sources are captured for local meeting recordings.",
+          "placeholder": "Select audio source...",
+          "options": {
+            "microphoneAndSystem": "Microphone + System Audio",
+            "microphoneOnly": "Microphone Only",
+            "systemOnly": "System Audio Only"
+          }
+        },
+        "title": "Meeting Recording",
+        "transcribeOnStop": {
+          "label": "Transcribe After Stopping",
+          "description": "Automatically generate a transcript when meeting recording stops."
+        }
       }
     },
     "sound": {

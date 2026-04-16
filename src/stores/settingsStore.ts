@@ -155,6 +155,10 @@ const settingUpdaters: {
     commands.changeWhisperGpuDevice(value as number),
   extra_recording_buffer_ms: (value) =>
     commands.changeExtraRecordingBufferSetting(value as number),
+  meeting_audio_source: (value) =>
+    commands.changeMeetingAudioSourceSetting(value as string),
+  meeting_transcribe_on_stop: (value) =>
+    commands.changeMeetingTranscribeOnStopSetting(value as boolean),
 };
 
 export const useSettingsStore = create<SettingsStore>()(

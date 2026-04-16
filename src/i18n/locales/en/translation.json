@@ -6,7 +6,9 @@
     "unloadModel": "Unload Model",
     "model": "Model",
     "quit": "Quit",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "startMeetingRecording": "Start Meeting Recording",
+    "stopMeetingRecording": "Stop Meeting Recording"
   },
   "sidebar": {
     "general": "General",
@@ -176,12 +178,33 @@
           "transcribe_with_post_process": {
             "name": "Post-Processing Hotkey",
             "description": "Optional: A dedicated hotkey that always applies AI post-processing to your transcription."
+          },
+          "toggle_meeting_recording": {
+            "name": "Meeting Recording Hotkey",
+            "description": "Start or stop local meeting recording."
           }
         },
         "errors": {
           "restore": "Failed to restore original shortcut",
           "set": "Failed to set shortcut: {{error}}",
           "reset": "Failed to reset shortcut to original value"
+        }
+      },
+      "meeting": {
+        "title": "Meeting Recording",
+        "audioSource": {
+          "title": "Meeting Audio Source",
+          "description": "Choose which audio sources are captured for local meeting recordings.",
+          "placeholder": "Select audio source...",
+          "options": {
+            "microphoneAndSystem": "Microphone + System Audio",
+            "microphoneOnly": "Microphone Only",
+            "systemOnly": "System Audio Only"
+          }
+        },
+        "transcribeOnStop": {
+          "label": "Transcribe After Stopping",
+          "description": "Automatically generate a transcript when meeting recording stops."
         }
       },
       "language": {

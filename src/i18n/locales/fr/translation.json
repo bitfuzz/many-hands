@@ -6,7 +6,9 @@
     "unloadModel": "Décharger le modèle",
     "model": "Modèle",
     "quit": "Quitter",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "startMeetingRecording": "Start Meeting Recording",
+    "stopMeetingRecording": "Stop Meeting Recording"
   },
   "sidebar": {
     "general": "Général",
@@ -194,6 +196,10 @@
           "transcribe_with_post_process": {
             "name": "Raccourci de post-traitement",
             "description": "Facultatif : Un raccourci dédié qui applique toujours le post-traitement IA à votre transcription."
+          },
+          "toggle_meeting_recording": {
+            "name": "Meeting Recording Hotkey",
+            "description": "Start or stop local meeting recording."
           }
         },
         "errors": {
@@ -213,6 +219,23 @@
       "pushToTalk": {
         "label": "Appuyer pour parler",
         "description": "Maintenez pour enregistrer, relâchez pour arrêter"
+      },
+      "meeting": {
+        "audioSource": {
+          "title": "Meeting Audio Source",
+          "description": "Choose which audio sources are captured for local meeting recordings.",
+          "placeholder": "Select audio source...",
+          "options": {
+            "microphoneAndSystem": "Microphone + System Audio",
+            "microphoneOnly": "Microphone Only",
+            "systemOnly": "System Audio Only"
+          }
+        },
+        "title": "Meeting Recording",
+        "transcribeOnStop": {
+          "label": "Transcribe After Stopping",
+          "description": "Automatically generate a transcript when meeting recording stops."
+        }
       }
     },
     "sound": {

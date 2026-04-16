@@ -14,6 +14,7 @@ mod overlay;
 pub mod portable;
 mod settings;
 mod shortcut;
+mod screen_capture;
 mod signal_handle;
 mod transcription_coordinator;
 mod tray;
@@ -28,6 +29,7 @@ use tauri_specta::{collect_commands, collect_events, Builder};
 use env_filter::Builder as EnvFilterBuilder;
 use managers::audio::AudioRecordingManager;
 use managers::history::HistoryManager;
+use managers::meeting::MeetingRecordingManager;
 use managers::model::ModelManager;
 use managers::transcription::TranscriptionManager;
 #[cfg(unix)]
@@ -155,6 +157,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     );
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
+    let meeting_manager = Arc::new(MeetingRecordingManager::new(app_handle));
 
     // Apply accelerator preferences before any model loads
     managers::transcription::apply_accelerator_settings(app_handle);
@@ -164,6 +167,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
+    app_handle.manage(meeting_manager);
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
@@ -235,6 +239,20 @@ fn initialize_core_logic(app_handle: &AppHandle) {
                 // Use centralized cancellation that handles all operations
                 cancel_current_operation(app);
             }
+            "toggle_meeting_recording" => {
+                let meeting_manager = app.state::<Arc<MeetingRecordingManager>>();
+                match meeting_manager.toggle() {
+                    Ok(status) => {
+                        log::info!(
+                            "Meeting recording toggled via tray. New state: {:?}",
+                            status.state
+                        );
+                    }
+                    Err(e) => {
+                        log::error!("Failed to toggle meeting recording via tray: {}", e);
+                    }
+                }
+            }
             "quit" => {
                 app.exit(0);
             }
@@ -276,6 +294,16 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let app_handle_for_listener = app_handle.clone();
     app_handle.listen("model-state-changed", move |_| {
         tray::update_tray_menu(&app_handle_for_listener, &tray::TrayIconState::Idle, None);
+    });
+
+    // Refresh tray menu when meeting status changes so start/stop label stays in sync.
+    let app_handle_for_meeting_listener = app_handle.clone();
+    app_handle.listen("meeting-recording-status-changed", move |_| {
+        tray::update_tray_menu(
+            &app_handle_for_meeting_listener,
+            &tray::TrayIconState::Idle,
+            None,
+        );
     });
 
     // Get the autostart manager and configure based on user setting
@@ -338,6 +366,8 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_debug_mode_setting,
             shortcut::change_word_correction_threshold_setting,
             shortcut::change_extra_recording_buffer_setting,
+            shortcut::change_meeting_audio_source_setting,
+            shortcut::change_meeting_transcribe_on_stop_setting,
             shortcut::change_paste_delay_ms_setting,
             shortcut::change_paste_method_setting,
             shortcut::get_available_typing_tools,
@@ -425,6 +455,11 @@ pub fn run(cli_args: CliArgs) {
             commands::history::retry_history_entry_transcription,
             commands::history::update_history_limit,
             commands::history::update_recording_retention_period,
+            commands::meeting::get_meeting_recording_status,
+            commands::meeting::start_meeting_recording,
+            commands::meeting::stop_meeting_recording,
+            commands::meeting::toggle_meeting_recording,
+            commands::meeting::get_meeting_permission_status,
             helpers::clamshell::is_laptop,
         ])
         .events(collect_events![managers::history::HistoryUpdatePayload,]);
@@ -485,6 +520,11 @@ pub fn run(cli_args: CliArgs) {
                 signal_handle::send_transcription_input(app, "transcribe", "CLI");
             } else if args.iter().any(|a| a == "--toggle-post-process") {
                 signal_handle::send_transcription_input(app, "transcribe_with_post_process", "CLI");
+            } else if args.iter().any(|a| a == "--toggle-meeting-recording") {
+                let meeting_manager = app.state::<Arc<MeetingRecordingManager>>();
+                if let Err(e) = meeting_manager.toggle() {
+                    log::error!("Failed to toggle meeting recording via CLI: {}", e);
+                }
             } else if args.iter().any(|a| a == "--cancel") {
                 crate::utils::cancel_current_operation(app);
             } else {

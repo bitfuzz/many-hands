@@ -6,7 +6,9 @@
     "unloadModel": "卸載模型",
     "model": "模型",
     "quit": "結束",
-    "cancel": "取消"
+    "cancel": "取消",
+    "startMeetingRecording": "Start Meeting Recording",
+    "stopMeetingRecording": "Stop Meeting Recording"
   },
   "sidebar": {
     "general": "一般",
@@ -176,6 +178,10 @@
           "transcribe_with_post_process": {
             "name": "後處理快捷鍵",
             "description": "可選：專用快捷鍵，使用時一律對轉錄結果套用 AI 後處理"
+          },
+          "toggle_meeting_recording": {
+            "name": "Meeting Recording Hotkey",
+            "description": "Start or stop local meeting recording."
           }
         },
         "errors": {
@@ -195,6 +201,23 @@
       "pushToTalk": {
         "label": "按住說話",
         "description": "按住錄製，放開停止"
+      },
+      "meeting": {
+        "audioSource": {
+          "title": "Meeting Audio Source",
+          "description": "Choose which audio sources are captured for local meeting recordings.",
+          "placeholder": "Select audio source...",
+          "options": {
+            "microphoneAndSystem": "Microphone + System Audio",
+            "microphoneOnly": "Microphone Only",
+            "systemOnly": "System Audio Only"
+          }
+        },
+        "title": "Meeting Recording",
+        "transcribeOnStop": {
+          "label": "Transcribe After Stopping",
+          "description": "Automatically generate a transcript when meeting recording stops."
+        }
       }
     },
     "models": {

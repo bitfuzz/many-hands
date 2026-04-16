@@ -11,6 +11,8 @@ import { useSettings } from "../../../hooks/useSettings";
 import { VolumeSlider } from "../VolumeSlider";
 import { MuteWhileRecording } from "../MuteWhileRecording";
 import { ModelSettingsCard } from "./ModelSettingsCard";
+import { MeetingAudioSourceSelector } from "../MeetingAudioSource";
+import { MeetingTranscribeOnStop } from "../MeetingTranscribeOnStop";
 
 export const GeneralSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -26,6 +28,11 @@ export const GeneralSettings: React.FC = () => {
         {!isLinux && !pushToTalk && (
           <ShortcutInput shortcutId="cancel" grouped={true} />
         )}
+      </SettingsGroup>
+      <SettingsGroup title={t("settings.general.meeting.title")}>
+        <ShortcutInput shortcutId="toggle_meeting_recording" grouped={true} />
+        <MeetingAudioSourceSelector grouped={true} />
+        <MeetingTranscribeOnStop grouped={true} />
       </SettingsGroup>
       <ModelSettingsCard />
       <SettingsGroup title={t("settings.sound.title")}>

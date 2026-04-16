@@ -6,7 +6,9 @@
     "unloadModel": "تفريغ النموذج",
     "model": "النموذج",
     "quit": "إنهاء",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "startMeetingRecording": "Start Meeting Recording",
+    "stopMeetingRecording": "Stop Meeting Recording"
   },
   "sidebar": {
     "general": "عام",
@@ -172,6 +174,10 @@
           "transcribe_with_post_process": {
             "name": "مفتاح المعالجة اللاحقة",
             "description": "اختياري: مفتاح اختصار مخصص يطبق دائماً المعالجة اللاحقة بالذكاء الاصطناعي على التفريغ الصوتي."
+          },
+          "toggle_meeting_recording": {
+            "name": "Meeting Recording Hotkey",
+            "description": "Start or stop local meeting recording."
           }
         },
         "errors": {
@@ -191,6 +197,23 @@
       "pushToTalk": {
         "label": "اضغط للتحدث",
         "description": "استمر في الضغط للتسجيل، واترك للتوقف"
+      },
+      "meeting": {
+        "audioSource": {
+          "title": "Meeting Audio Source",
+          "description": "Choose which audio sources are captured for local meeting recordings.",
+          "placeholder": "Select audio source...",
+          "options": {
+            "microphoneAndSystem": "Microphone + System Audio",
+            "microphoneOnly": "Microphone Only",
+            "systemOnly": "System Audio Only"
+          }
+        },
+        "title": "Meeting Recording",
+        "transcribeOnStop": {
+          "label": "Transcribe After Stopping",
+          "description": "Automatically generate a transcript when meeting recording stops."
+        }
       }
     },
     "sound": {

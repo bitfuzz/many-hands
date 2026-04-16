@@ -182,6 +182,7 @@ Handy supports command-line parameters on all platforms for integration with scr
 | ------------------------ | -------------------------------------------------------------- |
 | `--toggle-transcription` | Toggle recording on/off on a running instance                  |
 | `--toggle-post-process`  | Toggle recording with post-processing on/off                   |
+| `--toggle-meeting-recording` | Toggle local meeting recording on/off on a running instance |
 | `--cancel`               | Cancel the current operation on a running instance             |
 | `--start-hidden`         | Launch without showing the main window (tray icon visible)     |
 | `--no-tray`              | Launch without system tray (closing window quits the app)      |

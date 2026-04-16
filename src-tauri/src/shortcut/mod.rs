@@ -23,7 +23,7 @@ use tauri_plugin_autostart::ManagerExt;
 use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
     self, get_settings, AutoSubmitKey, ClipboardHandling, KeyboardImplementation, LLMPrompt,
-    OverlayPosition, PasteMethod, ShortcutBinding, SoundTheme, TypingTool,
+    MeetingAudioSource, OverlayPosition, PasteMethod, ShortcutBinding, SoundTheme, TypingTool,
     APPLE_INTELLIGENCE_PROVIDER_ID,
 };
 use crate::tray;
@@ -665,6 +665,39 @@ pub fn change_word_correction_threshold_setting(
 pub fn change_extra_recording_buffer_setting(app: AppHandle, ms: u64) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     settings.extra_recording_buffer_ms = ms;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_meeting_audio_source_setting(app: AppHandle, source: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    let parsed = match source.as_str() {
+        "microphone_only" => MeetingAudioSource::MicrophoneOnly,
+        "system_only" => MeetingAudioSource::SystemOnly,
+        "microphone_and_system" => MeetingAudioSource::MicrophoneAndSystem,
+        other => {
+            warn!(
+                "Invalid meeting audio source '{}', defaulting to microphone_and_system",
+                other
+            );
+            MeetingAudioSource::MicrophoneAndSystem
+        }
+    };
+    settings.meeting_audio_source = parsed;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_meeting_transcribe_on_stop_setting(
+    app: AppHandle,
+    enabled: bool,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.meeting_transcribe_on_stop = enabled;
     settings::write_settings(&app, settings);
     Ok(())
 }

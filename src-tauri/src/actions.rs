@@ -4,6 +4,7 @@ use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, S
 use crate::audio_toolkit::{is_microphone_access_denied, is_no_input_device_error};
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
+use crate::managers::meeting::MeetingRecordingManager;
 use crate::managers::transcription::TranscriptionManager;
 use crate::settings::{get_settings, AppSettings, APPLE_INTELLIGENCE_PROVIDER_ID};
 use crate::shortcut;
@@ -696,6 +697,25 @@ impl ShortcutAction for TestAction {
     }
 }
 
+// Meeting Toggle Action
+struct MeetingToggleAction;
+
+impl ShortcutAction for MeetingToggleAction {
+    fn start(&self, app: &AppHandle, binding_id: &str, shortcut_str: &str) {
+        let meeting_manager = app.state::<Arc<MeetingRecordingManager>>();
+        if let Err(err) = meeting_manager.toggle() {
+            error!(
+                "Shortcut ID '{}': Failed to toggle meeting recording with '{}': {}",
+                binding_id, shortcut_str, err
+            );
+        }
+    }
+
+    fn stop(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // Meeting toggle is edge-triggered on key press.
+    }
+}
+
 // Static Action Map
 pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::new(|| {
     let mut map = HashMap::new();
@@ -716,6 +736,10 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         "test".to_string(),
         Arc::new(TestAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "toggle_meeting_recording".to_string(),
+        Arc::new(MeetingToggleAction) as Arc<dyn ShortcutAction>,
     );
     map
 });

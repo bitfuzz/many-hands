@@ -23,6 +23,10 @@ pub struct CliArgs {
     #[arg(long)]
     pub cancel: bool,
 
+    /// Toggle local meeting recording on/off (sent to running instance)
+    #[arg(long)]
+    pub toggle_meeting_recording: bool,
+
     /// Enable debug mode with verbose logging
     #[arg(long)]
     pub debug: bool,

@@ -228,6 +228,13 @@ fn build_apple_intelligence_bridge() {
     );
     println!("cargo:rustc-link-search=native={}", sdk_swift_lib.display());
     println!("cargo:rustc-link-lib=framework=Foundation");
+    println!("cargo:rustc-link-lib=framework=CoreGraphics");
+    println!("cargo:rustc-link-lib=framework=CoreMedia");
+    println!("cargo:rustc-link-lib=framework=AudioToolbox");
+
+    // System audio capture uses ScreenCaptureKit and should remain optional at runtime.
+    println!("cargo:rustc-link-arg=-weak_framework");
+    println!("cargo:rustc-link-arg=ScreenCaptureKit");
 
     if has_foundation_models {
         // Use weak linking so the app can launch on systems without FoundationModels

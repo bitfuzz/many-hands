@@ -165,6 +165,14 @@ pub enum RecordingRetentionPeriod {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
+pub enum MeetingAudioSource {
+    MicrophoneOnly,
+    SystemOnly,
+    MicrophoneAndSystem,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
 pub enum KeyboardImplementation {
     Tauri,
     HandyKeys,
@@ -379,6 +387,10 @@ pub struct AppSettings {
     pub history_limit: usize,
     #[serde(default = "default_recording_retention_period")]
     pub recording_retention_period: RecordingRetentionPeriod,
+    #[serde(default = "default_meeting_audio_source")]
+    pub meeting_audio_source: MeetingAudioSource,
+    #[serde(default = "default_meeting_transcribe_on_stop")]
+    pub meeting_transcribe_on_stop: bool,
     #[serde(default)]
     pub paste_method: PasteMethod,
     #[serde(default)]
@@ -493,6 +505,14 @@ fn default_history_limit() -> usize {
 
 fn default_recording_retention_period() -> RecordingRetentionPeriod {
     RecordingRetentionPeriod::PreserveLimit
+}
+
+fn default_meeting_audio_source() -> MeetingAudioSource {
+    MeetingAudioSource::MicrophoneAndSystem
+}
+
+fn default_meeting_transcribe_on_stop() -> bool {
+    true
 }
 
 fn default_audio_feedback_volume() -> f32 {
@@ -763,6 +783,25 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: "escape".to_string(),
         },
     );
+    #[cfg(target_os = "windows")]
+    let default_meeting_shortcut = "ctrl+alt+space";
+    #[cfg(target_os = "macos")]
+    let default_meeting_shortcut = "option+cmd+space";
+    #[cfg(target_os = "linux")]
+    let default_meeting_shortcut = "ctrl+alt+space";
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    let default_meeting_shortcut = "alt+shift+space";
+
+    bindings.insert(
+        "toggle_meeting_recording".to_string(),
+        ShortcutBinding {
+            id: "toggle_meeting_recording".to_string(),
+            name: "Toggle Meeting Recording".to_string(),
+            description: "Starts or stops local meeting recording.".to_string(),
+            default_binding: default_meeting_shortcut.to_string(),
+            current_binding: default_meeting_shortcut.to_string(),
+        },
+    );
 
     AppSettings {
         bindings,
@@ -788,6 +827,8 @@ pub fn get_default_settings() -> AppSettings {
         word_correction_threshold: default_word_correction_threshold(),
         history_limit: default_history_limit(),
         recording_retention_period: default_recording_retention_period(),
+        meeting_audio_source: default_meeting_audio_source(),
+        meeting_transcribe_on_stop: default_meeting_transcribe_on_stop(),
         paste_method: PasteMethod::default(),
         clipboard_handling: ClipboardHandling::default(),
         auto_submit: default_auto_submit(),

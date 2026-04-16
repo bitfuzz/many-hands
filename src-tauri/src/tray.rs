@@ -1,4 +1,5 @@
 use crate::managers::history::{HistoryEntry, HistoryManager};
+use crate::managers::meeting::{MeetingRecordingManager, MeetingRecordingState};
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::TranscriptionManager;
 use crate::settings;
@@ -133,6 +134,22 @@ pub fn update_tray_menu(app: &AppHandle, state: &TrayIconState, locale: Option<&
         None::<&str>,
     )
     .expect("failed to create copy last transcript item");
+    let meeting_status = app.state::<Arc<MeetingRecordingManager>>().status();
+    let meeting_is_recording = meeting_status.state == MeetingRecordingState::Recording;
+    let meeting_toggle_enabled = meeting_status.state != MeetingRecordingState::Processing;
+    let meeting_toggle_label = if meeting_is_recording {
+        &strings.stop_meeting_recording
+    } else {
+        &strings.start_meeting_recording
+    };
+    let meeting_toggle_i = MenuItem::with_id(
+        app,
+        "toggle_meeting_recording",
+        meeting_toggle_label,
+        meeting_toggle_enabled,
+        None::<&str>,
+    )
+    .expect("failed to create meeting toggle item");
     let model_loaded = app.state::<Arc<TranscriptionManager>>().is_model_loaded();
     let quit_i = MenuItem::with_id(app, "quit", &strings.quit, true, quit_accelerator)
         .expect("failed to create quit item");
@@ -189,6 +206,7 @@ pub fn update_tray_menu(app: &AppHandle, state: &TrayIconState, locale: Option<&
                     &cancel_i,
                     &separator(),
                     &copy_last_transcript_i,
+                    &meeting_toggle_i,
                     &separator(),
                     &settings_i,
                     &check_updates_i,
@@ -204,6 +222,7 @@ pub fn update_tray_menu(app: &AppHandle, state: &TrayIconState, locale: Option<&
                 &version_i,
                 &separator(),
                 &copy_last_transcript_i,
+                &meeting_toggle_i,
                 &separator(),
                 &model_submenu,
                 &unload_model_i,
