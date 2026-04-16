@@ -175,19 +175,26 @@ fn build_apple_intelligence_bridge() {
         .expect("Unable to determine Swift toolchain lib directory");
     let sdk_swift_lib = Path::new(&sdk_path).join("usr/lib/swift");
 
-    // Use macOS 11.0 as deployment target for compatibility
-    // The @available(macOS 26.0, *) checks in Swift handle runtime availability
-    // Weak linking for FoundationModels is handled via cargo:rustc-link-arg below
-    let status = Command::new("xcrun")
+    // Use macOS 11.0 as deployment target for compatibility.
+    // The @available(macOS 26.0, *) checks in Swift handle runtime availability.
+    // Weak linking for FoundationModels is handled via cargo:rustc-link-arg below.
+    let mut swiftc_cmd = Command::new("xcrun");
+    swiftc_cmd.args([
+        "swiftc",
+        "-target",
+        "arm64-apple-macosx11.0",
+        "-sdk",
+        &sdk_path,
+        "-O",
+    ]);
+
+    if has_foundation_models {
+        // The real implementation uses C bridge types declared in the header.
+        swiftc_cmd.args(["-import-objc-header", BRIDGE_HEADER]);
+    }
+
+    let status = swiftc_cmd
         .args([
-            "swiftc",
-            "-target",
-            "arm64-apple-macosx11.0",
-            "-sdk",
-            &sdk_path,
-            "-O",
-            "-import-objc-header",
-            BRIDGE_HEADER,
             "-c",
             source_file,
             "-o",
