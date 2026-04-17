@@ -78,6 +78,11 @@ public func freeAppleLLMResponse(_ response: UnsafeMutableRawPointer?) {
     typed.deallocate()
 }
 
+@_cdecl("is_system_audio_capture_available")
+public func isSystemAudioCaptureAvailable() -> Int32 {
+    0
+}
+
 @_cdecl("preflight_screen_capture_access")
 public func preflightScreenCaptureAccess() -> Int32 {
     0

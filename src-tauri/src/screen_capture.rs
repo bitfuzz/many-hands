@@ -14,6 +14,7 @@ struct SystemAudioCaptureResponse {
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 extern "C" {
+    fn is_system_audio_capture_available() -> c_int;
     fn preflight_screen_capture_access() -> c_int;
     fn request_screen_capture_access() -> c_int;
     fn start_system_audio_capture() -> c_int;
@@ -23,7 +24,15 @@ extern "C" {
 }
 
 pub fn is_supported() -> bool {
-    cfg!(all(target_os = "macos", target_arch = "aarch64"))
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    {
+        unsafe { is_system_audio_capture_available() == 1 }
+    }
+
+    #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
+    {
+        false
+    }
 }
 
 pub fn preflight_access() -> bool {

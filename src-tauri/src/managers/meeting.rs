@@ -807,22 +807,28 @@ impl MeetingRecordingManager {
         if Self::source_uses_system_audio(requested_source) {
             if !crate::screen_capture::is_supported() {
                 if requested_source == MeetingAudioSource::SystemOnly {
-                    return Err("System audio capture is not supported on this build".to_string());
+                    return Err(
+                        "System audio capture is unavailable in this build/toolchain. Use microphone-only or install full Xcode and rebuild."
+                            .to_string(),
+                    );
                 }
 
                 warn!(
-                    "System audio capture is unavailable on this build. Falling back to microphone-only meeting capture"
+                    "System audio capture is unavailable in this build/toolchain. Falling back to microphone-only meeting capture"
                 );
                 active_source = MeetingAudioSource::MicrophoneOnly;
             } else {
                 if !crate::screen_capture::preflight_access() && !crate::screen_capture::request_access()
                 {
                     if requested_source == MeetingAudioSource::SystemOnly {
-                        return Err("Screen capture permission denied".to_string());
+                        return Err(
+                            "Screen capture permission denied. Enable Handy in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app."
+                                .to_string(),
+                        );
                     }
 
                     warn!(
-                        "Screen capture permission denied for meeting capture. Falling back to microphone-only"
+                        "Screen capture permission denied for meeting capture. Enable Handy in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app. Falling back to microphone-only"
                     );
                     active_source = MeetingAudioSource::MicrophoneOnly;
                 } else if let Err(err) = crate::screen_capture::start_capture() {
@@ -972,22 +978,28 @@ impl MeetingRecordingManager {
         if Self::source_uses_system_audio(requested_source) {
             if !crate::screen_capture::is_supported() {
                 if requested_source == MeetingAudioSource::SystemOnly {
-                    return Err("System audio capture is not supported on this build".to_string());
+                    return Err(
+                        "System audio capture is unavailable in this build/toolchain. Use microphone-only or install full Xcode and rebuild."
+                            .to_string(),
+                    );
                 }
 
                 warn!(
-                    "System audio capture is unavailable on this build. Falling back to microphone-only meeting capture"
+                    "System audio capture is unavailable in this build/toolchain. Falling back to microphone-only meeting capture"
                 );
                 active_source = MeetingAudioSource::MicrophoneOnly;
             } else {
                 if !crate::screen_capture::preflight_access() && !crate::screen_capture::request_access()
                 {
                     if requested_source == MeetingAudioSource::SystemOnly {
-                        return Err("Screen capture permission denied".to_string());
+                        return Err(
+                            "Screen capture permission denied. Enable Handy in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app."
+                                .to_string(),
+                        );
                     }
 
                     warn!(
-                        "Screen capture permission denied for meeting capture. Falling back to microphone-only"
+                        "Screen capture permission denied for meeting capture. Enable Handy in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app. Falling back to microphone-only"
                     );
                     active_source = MeetingAudioSource::MicrophoneOnly;
                 } else if let Err(err) = crate::screen_capture::start_capture() {

@@ -34,6 +34,7 @@ int preflight_screen_capture_access(void);
 int request_screen_capture_access(void);
 
 // System audio capture helpers
+int is_system_audio_capture_available(void);
 int start_system_audio_capture(void);
 SystemAudioCaptureResponse* stop_system_audio_capture(void);
 int get_system_audio_levels(float* out_levels, unsigned long long capacity);

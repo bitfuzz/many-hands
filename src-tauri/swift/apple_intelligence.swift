@@ -181,6 +181,17 @@ public func freeAppleLLMResponse(_ response: UnsafeMutableRawPointer?) {
     typed.deallocate()
 }
 
+@_cdecl("is_system_audio_capture_available")
+public func isSystemAudioCaptureAvailable() -> Int32 {
+    #if canImport(ScreenCaptureKit)
+        if #available(macOS 13.0, *) {
+            return 1
+        }
+    #endif
+
+    return 0
+}
+
 #if canImport(ScreenCaptureKit)
 @available(macOS 13.0, *)
 private final class SystemAudioCaptureSession: NSObject, SCStreamOutput, SCStreamDelegate {
