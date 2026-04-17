@@ -159,6 +159,8 @@ const settingUpdaters: {
     commands.changeMeetingAudioSourceSetting(value as string),
   meeting_transcribe_on_stop: (value) =>
     commands.changeMeetingTranscribeOnStopSetting(value as boolean),
+  meeting_transcript_merge_policy: (value) =>
+    commands.changeMeetingTranscriptMergePolicySetting(value as string),
 };
 
 export const useSettingsStore = create<SettingsStore>()(

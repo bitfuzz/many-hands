@@ -20,6 +20,7 @@ mod transcription_coordinator;
 mod tray;
 mod tray_i18n;
 mod utils;
+mod zoom_detection;
 
 pub use cli::CliArgs;
 #[cfg(debug_assertions)]
@@ -167,6 +168,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
+    meeting_manager.start_zoom_auto_detection_loop();
     app_handle.manage(meeting_manager);
 
     // Note: Shortcuts are NOT initialized here.
@@ -368,6 +370,7 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_extra_recording_buffer_setting,
             shortcut::change_meeting_audio_source_setting,
             shortcut::change_meeting_transcribe_on_stop_setting,
+            shortcut::change_meeting_transcript_merge_policy_setting,
             shortcut::change_paste_delay_ms_setting,
             shortcut::change_paste_method_setting,
             shortcut::get_available_typing_tools,
@@ -459,6 +462,7 @@ pub fn run(cli_args: CliArgs) {
             commands::meeting::start_meeting_recording,
             commands::meeting::stop_meeting_recording,
             commands::meeting::toggle_meeting_recording,
+            commands::meeting::toggle_meeting_recording_pause,
             commands::meeting::get_meeting_permission_status,
             helpers::clamshell::is_laptop,
         ])

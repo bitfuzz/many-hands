@@ -173,6 +173,14 @@ pub enum MeetingAudioSource {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
+pub enum MeetingTranscriptMergePolicy {
+    SystemPriority,
+    Balanced,
+    KeepBoth,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
 pub enum KeyboardImplementation {
     Tauri,
     HandyKeys,
@@ -391,6 +399,8 @@ pub struct AppSettings {
     pub meeting_audio_source: MeetingAudioSource,
     #[serde(default = "default_meeting_transcribe_on_stop")]
     pub meeting_transcribe_on_stop: bool,
+    #[serde(default = "default_meeting_transcript_merge_policy")]
+    pub meeting_transcript_merge_policy: MeetingTranscriptMergePolicy,
     #[serde(default)]
     pub paste_method: PasteMethod,
     #[serde(default)]
@@ -513,6 +523,10 @@ fn default_meeting_audio_source() -> MeetingAudioSource {
 
 fn default_meeting_transcribe_on_stop() -> bool {
     true
+}
+
+fn default_meeting_transcript_merge_policy() -> MeetingTranscriptMergePolicy {
+    MeetingTranscriptMergePolicy::SystemPriority
 }
 
 fn default_audio_feedback_volume() -> f32 {
@@ -844,6 +858,7 @@ pub fn get_default_settings() -> AppSettings {
         recording_retention_period: default_recording_retention_period(),
         meeting_audio_source: default_meeting_audio_source(),
         meeting_transcribe_on_stop: default_meeting_transcribe_on_stop(),
+        meeting_transcript_merge_policy: default_meeting_transcript_merge_policy(),
         paste_method: PasteMethod::default(),
         clipboard_handling: ClipboardHandling::default(),
         auto_submit: default_auto_submit(),

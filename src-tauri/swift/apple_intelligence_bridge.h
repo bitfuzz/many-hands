@@ -36,6 +36,7 @@ int request_screen_capture_access(void);
 // System audio capture helpers
 int start_system_audio_capture(void);
 SystemAudioCaptureResponse* stop_system_audio_capture(void);
+int get_system_audio_levels(float* out_levels, unsigned long long capacity);
 void free_system_audio_capture_response(SystemAudioCaptureResponse* response);
 
 #ifdef __cplusplus

@@ -12,6 +12,14 @@
   box-sizing: border-box;
 }
 
+.recording-overlay.meeting-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  background: transparent;
+}
+
 .overlay-left {
   display: flex;
   align-items: center;
@@ -27,6 +35,94 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+}
+
+.meeting-fab {
+  height: 30px;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid #ffd9e74d;
+  background: linear-gradient(135deg, #351f2bcc 0%, #101013b8 100%);
+  box-shadow:
+    0 4px 16px #00000033,
+    inset 0 1px 0 #ffffff12;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition:
+    width 220ms ease,
+    border-radius 220ms ease,
+    padding 220ms ease,
+    background 220ms ease;
+}
+
+.meeting-fab.is-paused {
+  border-color: #b7dcff57;
+  background: linear-gradient(135deg, #1f3342cc 0%, #0e1017b8 100%);
+}
+
+.recording-overlay.meeting-overlay:hover .meeting-fab {
+  width: 164px;
+  border-radius: 16px;
+  justify-content: flex-start;
+  padding-left: 3px;
+}
+
+.meeting-pause-button {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: #f7b6d53d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    transform 120ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.meeting-pause-button:hover {
+  background: #fac8e159;
+  box-shadow: 0 0 0 1px #ffffff1a;
+}
+
+.meeting-pause-button:active {
+  transform: scale(0.94);
+}
+
+.meeting-pill-visualizer {
+  display: flex;
+  align-items: end;
+  height: 18px;
+  gap: 2px;
+  margin-left: 9px;
+  padding-right: 8px;
+  opacity: 0;
+  transform: translateX(8px);
+  transition:
+    opacity 180ms ease,
+    transform 220ms ease;
+  pointer-events: none;
+}
+
+.recording-overlay.meeting-overlay:hover .meeting-pill-visualizer {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.meeting-pill-bar {
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffe8f2 0%, #f8a3cb 100%);
+  min-height: 3px;
 }
 
 .bars-container {

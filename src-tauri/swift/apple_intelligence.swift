@@ -154,10 +154,12 @@ public func freeAppleLLMResponse(_ response: UnsafeMutablePointer<AppleLLMRespon
 @available(macOS 13.0, *)
 private final class SystemAudioCaptureSession: NSObject, SCStreamOutput, SCStreamDelegate {
     private static let targetSampleRate = 16_000.0
+    private static let levelBucketCount = 16
     private let stateLock = NSLock()
     private var stream: SCStream?
     private var isCapturing = false
     private var capturedSamples: [Float] = []
+    private var latestLevels = Array(repeating: Float(0), count: levelBucketCount)
     private var lastErrorMessage: String?
     private let outputQueue = DispatchQueue(
         label: "com.handy.system-audio-capture-output",
@@ -171,6 +173,7 @@ private final class SystemAudioCaptureSession: NSObject, SCStreamOutput, SCStrea
             return true
         }
         capturedSamples.removeAll(keepingCapacity: true)
+        latestLevels = Array(repeating: Float(0), count: Self.levelBucketCount)
         lastErrorMessage = nil
         stateLock.unlock()
 
@@ -278,6 +281,7 @@ private final class SystemAudioCaptureSession: NSObject, SCStreamOutput, SCStrea
         stateLock.lock()
         let samples = capturedSamples
         capturedSamples.removeAll(keepingCapacity: false)
+        latestLevels = Array(repeating: Float(0), count: Self.levelBucketCount)
         let streamError = lastErrorMessage
         lastErrorMessage = nil
         stateLock.unlock()
@@ -292,9 +296,54 @@ private final class SystemAudioCaptureSession: NSObject, SCStreamOutput, SCStrea
     private func appendSamples(_ samples: [Float]) {
         guard !samples.isEmpty else { return }
 
+        updateLevels(from: samples)
+
         stateLock.lock()
         capturedSamples.append(contentsOf: samples)
         stateLock.unlock()
+    }
+
+    private func updateLevels(from samples: [Float]) {
+        guard !samples.isEmpty else { return }
+
+        let bucketCount = Self.levelBucketCount
+        let bucketSize = max(1, samples.count / bucketCount)
+        var nextLevels = Array(repeating: Float(0), count: bucketCount)
+
+        for bucketIndex in 0..<bucketCount {
+            let start = bucketIndex * bucketSize
+            if start >= samples.count {
+                break
+            }
+
+            let end = min(samples.count, start + bucketSize)
+            var sumSquares: Float = 0
+            var peak: Float = 0
+
+            for sample in samples[start..<end] {
+                let absValue = Swift.abs(sample)
+                peak = max(peak, absValue)
+                sumSquares += sample * sample
+            }
+
+            let frameCount = Float(max(1, end - start))
+            let rms = sqrt(sumSquares / frameCount)
+            let energy = max(rms * 2.8, peak)
+            nextLevels[bucketIndex] = min(max(energy, 0), 1)
+        }
+
+        stateLock.lock()
+        for index in 0..<bucketCount {
+            latestLevels[index] = max(nextLevels[index], latestLevels[index] * 0.78)
+        }
+        stateLock.unlock()
+    }
+
+    func currentLevels() -> [Float] {
+        stateLock.lock()
+        let levels = latestLevels
+        stateLock.unlock()
+        return levels
     }
 
     private func normalizeSampleRate(_ samples: [Float], inputSampleRate: Double) -> [Float] {
@@ -634,6 +683,35 @@ public func stopSystemAudioCapture() -> UnsafeMutablePointer<SystemAudioCaptureR
         return makeSystemAudioErrorResponse(
             "System audio capture is not available in this build."
         )
+    #endif
+}
+
+@_cdecl("get_system_audio_levels")
+public func getSystemAudioLevels(
+    _ outLevels: UnsafeMutablePointer<Float>?,
+    _ capacity: UInt64
+) -> Int32 {
+    guard let outLevels, capacity > 0 else {
+        return 0
+    }
+
+    #if canImport(ScreenCaptureKit)
+        guard let levels = withSystemAudioSession({ $0.currentLevels() }) else {
+            return 0
+        }
+
+        let copiedCount = min(Int(capacity), levels.count)
+        guard copiedCount > 0 else {
+            return 0
+        }
+
+        for index in 0..<copiedCount {
+            outLevels[index] = levels[index]
+        }
+
+        return Int32(copiedCount)
+    #else
+        return 0
     #endif
 }
 

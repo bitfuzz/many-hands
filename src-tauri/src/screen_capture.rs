@@ -18,6 +18,7 @@ extern "C" {
     fn request_screen_capture_access() -> c_int;
     fn start_system_audio_capture() -> c_int;
     fn stop_system_audio_capture() -> *mut SystemAudioCaptureResponse;
+    fn get_system_audio_levels(out_levels: *mut f32, capacity: u64) -> c_int;
     fn free_system_audio_capture_response(response: *mut SystemAudioCaptureResponse);
 }
 
@@ -101,5 +102,26 @@ pub fn stop_capture() -> Result<Vec<f32>, String> {
     #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
     {
         Err("System audio capture is not supported on this platform".to_string())
+    }
+}
+
+pub fn current_levels() -> Vec<f32> {
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+    {
+        const LEVEL_BUCKETS: usize = 16;
+        let mut levels = [0.0f32; LEVEL_BUCKETS];
+
+        let copied = unsafe { get_system_audio_levels(levels.as_mut_ptr(), LEVEL_BUCKETS as u64) };
+        if copied <= 0 {
+            return Vec::new();
+        }
+
+        let count = (copied as usize).min(LEVEL_BUCKETS);
+        levels[..count].to_vec()
+    }
+
+    #[cfg(not(all(target_os = "macos", target_arch = "aarch64")))]
+    {
+        Vec::new()
     }
 }

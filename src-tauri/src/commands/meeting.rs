@@ -54,6 +54,14 @@ pub fn toggle_meeting_recording(
 
 #[tauri::command]
 #[specta::specta]
+pub fn toggle_meeting_recording_pause(
+    meeting_manager: State<'_, Arc<MeetingRecordingManager>>,
+) -> Result<MeetingRecordingStatus, String> {
+    meeting_manager.toggle_pause()
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn get_meeting_permission_status() -> MeetingPermissionStatus {
     let supported = crate::screen_capture::is_supported();
     if !supported {

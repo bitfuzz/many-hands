@@ -135,7 +135,10 @@ pub fn update_tray_menu(app: &AppHandle, state: &TrayIconState, locale: Option<&
     )
     .expect("failed to create copy last transcript item");
     let meeting_status = app.state::<Arc<MeetingRecordingManager>>().status();
-    let meeting_is_recording = meeting_status.state == MeetingRecordingState::Recording;
+    let meeting_is_recording = matches!(
+        meeting_status.state,
+        MeetingRecordingState::Recording | MeetingRecordingState::Paused
+    );
     let meeting_toggle_enabled = meeting_status.state != MeetingRecordingState::Processing;
     let meeting_toggle_label = if meeting_is_recording {
         &strings.stop_meeting_recording

@@ -23,7 +23,8 @@ use tauri_plugin_autostart::ManagerExt;
 use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
     self, get_settings, AutoSubmitKey, ClipboardHandling, KeyboardImplementation, LLMPrompt,
-    MeetingAudioSource, OverlayPosition, PasteMethod, ShortcutBinding, SoundTheme, TypingTool,
+    MeetingAudioSource, MeetingTranscriptMergePolicy, OverlayPosition, PasteMethod,
+    ShortcutBinding, SoundTheme, TypingTool,
     APPLE_INTELLIGENCE_PROVIDER_ID,
 };
 use crate::tray;
@@ -698,6 +699,30 @@ pub fn change_meeting_transcribe_on_stop_setting(
 ) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     settings.meeting_transcribe_on_stop = enabled;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_meeting_transcript_merge_policy_setting(
+    app: AppHandle,
+    policy: String,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    let parsed = match policy.as_str() {
+        "system_priority" => MeetingTranscriptMergePolicy::SystemPriority,
+        "balanced" => MeetingTranscriptMergePolicy::Balanced,
+        "keep_both" => MeetingTranscriptMergePolicy::KeepBoth,
+        other => {
+            warn!(
+                "Invalid meeting transcript merge policy '{}', defaulting to system_priority",
+                other
+            );
+            MeetingTranscriptMergePolicy::SystemPriority
+        }
+    };
+    settings.meeting_transcript_merge_policy = parsed;
     settings::write_settings(&app, settings);
     Ok(())
 }
