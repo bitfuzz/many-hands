@@ -118,11 +118,10 @@ fn build_apple_intelligence_bridge() {
     use std::process::Command;
 
     const REAL_SWIFT_FILE: &str = "swift/apple_intelligence.swift";
-    const BRIDGE_HEADER: &str = "swift/apple_intelligence_bridge.h";
 
     println!("cargo:rerun-if-changed={REAL_SWIFT_FILE}");
     println!("cargo:rerun-if-changed=swift/apple_intelligence_stub.swift");
-    println!("cargo:rerun-if-changed={BRIDGE_HEADER}");
+    println!("cargo:rerun-if-changed=swift/apple_intelligence_bridge.h");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set"));
     let object_path = out_dir.join("apple_intelligence.o");
@@ -186,9 +185,6 @@ fn build_apple_intelligence_bridge() {
         &sdk_path,
         "-O",
     ]);
-
-    // The implementation uses C bridge types declared in the header.
-    swiftc_cmd.args(["-import-objc-header", BRIDGE_HEADER]);
 
     let status = swiftc_cmd
         .args([

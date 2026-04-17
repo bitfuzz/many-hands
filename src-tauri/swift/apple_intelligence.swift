@@ -23,6 +23,19 @@ private struct CleanedTranscript: Sendable {
 // MARK: - Swift implementation for Apple LLM integration
 // This file is compiled via Cargo build script for Apple Silicon targets
 
+private struct AppleLLMResponse {
+    var response: UnsafeMutablePointer<CChar>?
+    var success: Int32
+    var error_message: UnsafeMutablePointer<CChar>?
+}
+
+private struct SystemAudioCaptureResponse {
+    var samples: UnsafeMutablePointer<Float>?
+    var sample_count: UInt64
+    var success: Int32
+    var error_message: UnsafeMutablePointer<CChar>?
+}
+
 private typealias ResponsePointer = UnsafeMutablePointer<AppleLLMResponse>
 
 private func duplicateCString(_ text: String) -> UnsafeMutablePointer<CChar>? {
@@ -71,7 +84,7 @@ public func processTextWithSystemPrompt(
     _ systemPrompt: UnsafePointer<CChar>,
     _ userContent: UnsafePointer<CChar>,
     maxTokens: Int32
-) -> UnsafeMutablePointer<AppleLLMResponse> {
+) -> UnsafeMutableRawPointer? {
     let swiftSystemPrompt = String(cString: systemPrompt)
     let swiftUserContent = String(cString: userContent)
     let responsePtr = ResponsePointer.allocate(capacity: 1)
@@ -82,7 +95,7 @@ public func processTextWithSystemPrompt(
         responsePtr.pointee.error_message = duplicateCString(
             "Apple Intelligence requires macOS 26 or newer."
         )
-        return responsePtr
+        return UnsafeMutableRawPointer(responsePtr)
     }
 
     let model = SystemLanguageModel.default
@@ -90,7 +103,7 @@ public func processTextWithSystemPrompt(
         responsePtr.pointee.error_message = duplicateCString(
             "Apple Intelligence is not currently available on this device."
         )
-        return responsePtr
+        return UnsafeMutableRawPointer(responsePtr)
     }
 
     let tokenLimit = max(0, Int(maxTokens))
@@ -142,27 +155,30 @@ public func processTextWithSystemPrompt(
         responsePtr.pointee.error_message = duplicateCString(box.error ?? "Unknown error")
     }
 
-    return responsePtr
+    return UnsafeMutableRawPointer(responsePtr)
 #else
     let msg = "Apple Intelligence is not available in this build (SDK requirement not met)."
     responsePtr.pointee.error_message = duplicateCString(msg)
-    return responsePtr
+    return UnsafeMutableRawPointer(responsePtr)
 #endif
 }
 
 @_cdecl("free_apple_llm_response")
-public func freeAppleLLMResponse(_ response: UnsafeMutablePointer<AppleLLMResponse>?) {
+public func freeAppleLLMResponse(_ response: UnsafeMutableRawPointer?) {
     guard let response = response else { return }
 
-    if let responseStr = response.pointee.response {
+    let typed = response.assumingMemoryBound(to: AppleLLMResponse.self)
+
+    if let responseStr = typed.pointee.response {
         free(UnsafeMutablePointer(mutating: responseStr))
     }
 
-    if let errorStr = response.pointee.error_message {
+    if let errorStr = typed.pointee.error_message {
         free(UnsafeMutablePointer(mutating: errorStr))
     }
 
-    response.deallocate()
+    typed.deinitialize(count: 1)
+    typed.deallocate()
 }
 
 #if canImport(ScreenCaptureKit)
@@ -680,23 +696,27 @@ public func startSystemAudioCapture() -> Int32 {
 }
 
 @_cdecl("stop_system_audio_capture")
-public func stopSystemAudioCapture() -> UnsafeMutablePointer<SystemAudioCaptureResponse> {
+public func stopSystemAudioCapture() -> UnsafeMutableRawPointer? {
     #if canImport(ScreenCaptureKit)
         guard let result = withSystemAudioSession({ $0.stopCapture() }) else {
-            return makeSystemAudioErrorResponse(
+            return UnsafeMutableRawPointer(
+                makeSystemAudioErrorResponse(
                 "System audio capture is not supported on this macOS version."
+                )
             )
         }
 
         switch result {
         case .success(let samples):
-            return makeSystemAudioSuccessResponse(samples)
+            return UnsafeMutableRawPointer(makeSystemAudioSuccessResponse(samples))
         case .failure(let error):
-            return makeSystemAudioErrorResponse(error)
+            return UnsafeMutableRawPointer(makeSystemAudioErrorResponse(error))
         }
     #else
-        return makeSystemAudioErrorResponse(
-            "System audio capture is not available in this build."
+        return UnsafeMutableRawPointer(
+            makeSystemAudioErrorResponse(
+                "System audio capture is not available in this build."
+            )
         )
     #endif
 }
@@ -732,17 +752,20 @@ public func getSystemAudioLevels(
 
 @_cdecl("free_system_audio_capture_response")
 public func freeSystemAudioCaptureResponse(
-    _ response: UnsafeMutablePointer<SystemAudioCaptureResponse>?
+    _ response: UnsafeMutableRawPointer?
 ) {
     guard let response else { return }
 
-    if let samples = response.pointee.samples {
+    let typed = response.assumingMemoryBound(to: SystemAudioCaptureResponse.self)
+
+    if let samples = typed.pointee.samples {
         samples.deallocate()
     }
 
-    if let errorStr = response.pointee.error_message {
+    if let errorStr = typed.pointee.error_message {
         free(UnsafeMutablePointer(mutating: errorStr))
     }
 
-    response.deallocate()
+    typed.deinitialize(count: 1)
+    typed.deallocate()
 }
