@@ -19,8 +19,11 @@ const TRANSCRIPT_CHUNK_SECONDS: usize = 4;
 const TRANSCRIPT_SAMPLE_RATE_HZ: usize = 16_000;
 const SILENCE_RMS_THRESHOLD: f32 = 0.0025;
 const SYSTEM_LEVEL_POLL_INTERVAL: Duration = Duration::from_millis(50);
+#[cfg(target_os = "windows")]
 const ZOOM_DETECTION_POLL_INTERVAL: Duration = Duration::from_millis(1500);
+#[cfg(target_os = "windows")]
 const ZOOM_DETECTION_ACTIVE_POLLS_REQUIRED: u8 = 2;
+#[cfg(target_os = "windows")]
 const ZOOM_DETECTION_INACTIVE_POLLS_REQUIRED: u8 = 4;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Type)]
@@ -99,11 +102,13 @@ impl MeetingRecordingManager {
         )
     }
 
+    #[cfg(target_os = "windows")]
     fn set_zoom_auto_started(&self, value: bool) {
         let mut runtime = self.runtime.lock().expect("meeting runtime lock poisoned");
         runtime.zoom_auto_started = value;
     }
 
+    #[cfg(target_os = "windows")]
     fn is_zoom_auto_started_active(&self) -> bool {
         let runtime = self.runtime.lock().expect("meeting runtime lock poisoned");
         runtime.zoom_auto_started
@@ -558,9 +563,6 @@ impl MeetingRecordingManager {
             return;
         }
 
-        let mut system_transcription_text = String::new();
-        let mut microphone_transcription_text = String::new();
-
         let transcription_text = if settings.meeting_transcribe_on_stop {
             transcription_manager.initiate_model_load();
             if source == MeetingAudioSource::MicrophoneAndSystem
@@ -624,8 +626,8 @@ impl MeetingRecordingManager {
                     }
                 }
 
-                system_transcription_text = system_segments.join("\n").trim().to_string();
-                microphone_transcription_text =
+                let system_transcription_text = system_segments.join("\n").trim().to_string();
+                let microphone_transcription_text =
                     microphone_segments.join("\n").trim().to_string();
 
                 let mut merged_text = merged_segments.join("\n").trim().to_string();

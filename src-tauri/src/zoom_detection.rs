@@ -14,6 +14,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
 };
 
+#[cfg(any(target_os = "windows", test))]
 fn title_indicates_zoom_meeting(title: &str) -> bool {
     let normalized = title.to_ascii_lowercase();
 
@@ -119,6 +120,7 @@ pub fn is_zoom_meeting_active() -> bool {
 }
 
 #[cfg(not(target_os = "windows"))]
+#[allow(dead_code)]
 pub fn is_zoom_meeting_active() -> bool {
     false
 }

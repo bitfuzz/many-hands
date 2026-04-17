@@ -100,6 +100,14 @@ public func stopSystemAudioCapture() -> UnsafeMutableRawPointer? {
     )
 }
 
+@_cdecl("get_system_audio_levels")
+public func getSystemAudioLevels(
+    _ outLevels: UnsafeMutablePointer<Float>?,
+    _ capacity: UInt64
+) -> Int32 {
+    0
+}
+
 @_cdecl("free_system_audio_capture_response")
 public func freeSystemAudioCaptureResponse(
     _ response: UnsafeMutableRawPointer?
