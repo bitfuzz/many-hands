@@ -246,7 +246,7 @@ fn build_apple_intelligence_bridge() {
             }
 
             println!(
-                "cargo:warning=Building with stub bridge: Apple Intelligence and system audio capture are unavailable on this toolchain setup."
+                "cargo:warning=Building with stub bridge: Apple Intelligence and system audio capture are unavailable on this toolchain setup. macOS Screen Recording/System Audio permission prompts will not appear in this mode."
             );
             STUB_SWIFT_FILE
         }

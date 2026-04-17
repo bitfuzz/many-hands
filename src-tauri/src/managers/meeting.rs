@@ -808,13 +808,13 @@ impl MeetingRecordingManager {
             if !crate::screen_capture::is_supported() {
                 if requested_source == MeetingAudioSource::SystemOnly {
                     return Err(
-                        "System audio capture is unavailable in this build/toolchain. Use microphone-only or install full Xcode and rebuild."
+                        "System audio capture is unavailable in this build/toolchain. In this mode, macOS Screen Recording/System Audio permissions will not appear for Handy. Use microphone-only or install full Xcode and rebuild."
                             .to_string(),
                     );
                 }
 
                 warn!(
-                    "System audio capture is unavailable in this build/toolchain. Falling back to microphone-only meeting capture"
+                    "System audio capture is unavailable in this build/toolchain. In this mode, macOS Screen Recording/System Audio permissions will not appear for Handy. Falling back to microphone-only meeting capture"
                 );
                 active_source = MeetingAudioSource::MicrophoneOnly;
             } else {
@@ -822,13 +822,13 @@ impl MeetingRecordingManager {
                 {
                     if requested_source == MeetingAudioSource::SystemOnly {
                         return Err(
-                            "Screen capture permission denied. Enable Handy in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app."
+                            "Screen capture permission denied. Enable access in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app. If you are running `tauri dev`, grant your terminal app (Terminal/iTerm/VS Code); for packaged builds, grant Handy."
                                 .to_string(),
                         );
                     }
 
                     warn!(
-                        "Screen capture permission denied for meeting capture. Enable Handy in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app. Falling back to microphone-only"
+                        "Screen capture permission denied for meeting capture. Enable access in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app. If running `tauri dev`, grant your terminal app (Terminal/iTerm/VS Code); for packaged builds, grant Handy. Falling back to microphone-only"
                     );
                     active_source = MeetingAudioSource::MicrophoneOnly;
                 } else if let Err(err) = crate::screen_capture::start_capture() {
@@ -979,13 +979,13 @@ impl MeetingRecordingManager {
             if !crate::screen_capture::is_supported() {
                 if requested_source == MeetingAudioSource::SystemOnly {
                     return Err(
-                        "System audio capture is unavailable in this build/toolchain. Use microphone-only or install full Xcode and rebuild."
+                        "System audio capture is unavailable in this build/toolchain. In this mode, macOS Screen Recording/System Audio permissions will not appear for Handy. Use microphone-only or install full Xcode and rebuild."
                             .to_string(),
                     );
                 }
 
                 warn!(
-                    "System audio capture is unavailable in this build/toolchain. Falling back to microphone-only meeting capture"
+                    "System audio capture is unavailable in this build/toolchain. In this mode, macOS Screen Recording/System Audio permissions will not appear for Handy. Falling back to microphone-only meeting capture"
                 );
                 active_source = MeetingAudioSource::MicrophoneOnly;
             } else {
@@ -993,13 +993,13 @@ impl MeetingRecordingManager {
                 {
                     if requested_source == MeetingAudioSource::SystemOnly {
                         return Err(
-                            "Screen capture permission denied. Enable Handy in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app."
+                            "Screen capture permission denied. Enable access in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app. If you are running `tauri dev`, grant your terminal app (Terminal/iTerm/VS Code); for packaged builds, grant Handy."
                                 .to_string(),
                         );
                     }
 
                     warn!(
-                        "Screen capture permission denied for meeting capture. Enable Handy in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app. Falling back to microphone-only"
+                        "Screen capture permission denied for meeting capture. Enable access in System Settings > Privacy & Security > Screen & System Audio Recording (or Screen Recording), then restart the app. If running `tauri dev`, grant your terminal app (Terminal/iTerm/VS Code); for packaged builds, grant Handy. Falling back to microphone-only"
                     );
                     active_source = MeetingAudioSource::MicrophoneOnly;
                 } else if let Err(err) = crate::screen_capture::start_capture() {
