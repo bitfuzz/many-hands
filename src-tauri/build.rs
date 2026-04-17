@@ -118,9 +118,10 @@ fn build_apple_intelligence_bridge() {
     use std::process::Command;
 
     const REAL_SWIFT_FILE: &str = "swift/apple_intelligence.swift";
+    const STUB_SWIFT_FILE: &str = "swift/apple_intelligence_stub.swift";
 
     println!("cargo:rerun-if-changed={REAL_SWIFT_FILE}");
-    println!("cargo:rerun-if-changed=swift/apple_intelligence_stub.swift");
+    println!("cargo:rerun-if-changed={STUB_SWIFT_FILE}");
     println!("cargo:rerun-if-changed=swift/apple_intelligence_bridge.h");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set"));
@@ -155,6 +156,10 @@ fn build_apple_intelligence_bridge() {
         panic!("Source file {} is missing!", REAL_SWIFT_FILE);
     }
 
+    if !Path::new(STUB_SWIFT_FILE).exists() {
+        panic!("Source file {} is missing!", STUB_SWIFT_FILE);
+    }
+
     let swiftc_path = String::from_utf8(
         Command::new("xcrun")
             .args(["--find", "swiftc"])
@@ -174,33 +179,78 @@ fn build_apple_intelligence_bridge() {
     let sdk_swift_lib = Path::new(&sdk_path).join("usr/lib/swift");
 
     // Use macOS 11.0 as deployment target for compatibility.
-    // The @available(macOS 26.0, *) checks in Swift handle runtime availability.
-    // Weak linking for FoundationModels is handled via cargo:rustc-link-arg below.
-    let mut swiftc_cmd = Command::new("xcrun");
-    swiftc_cmd.args([
-        "swiftc",
-        "-target",
-        "arm64-apple-macosx11.0",
-        "-sdk",
-        &sdk_path,
-        "-O",
-    ]);
+    // The @available checks in Swift handle runtime availability.
+    let compile_swift_source = |source_file: &str| -> Result<(), String> {
+        let output = Command::new("xcrun")
+            .args([
+                "swiftc",
+                "-target",
+                "arm64-apple-macosx11.0",
+                "-sdk",
+                &sdk_path,
+                "-O",
+                "-c",
+                source_file,
+                "-o",
+                object_path
+                    .to_str()
+                    .expect("Failed to convert object path to string"),
+            ])
+            .output()
+            .expect("Failed to invoke swiftc for Apple bridge");
 
-    let status = swiftc_cmd
-        .args([
-            "-c",
-            REAL_SWIFT_FILE,
-            "-o",
-            object_path
-                .to_str()
-                .expect("Failed to convert object path to string"),
-        ])
-        .status()
-        .expect("Failed to invoke swiftc for Apple Intelligence bridge");
+        if output.status.success() {
+            return Ok(());
+        }
 
-    if !status.success() {
-        panic!("swiftc failed to compile {REAL_SWIFT_FILE}");
-    }
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let diagnostic = if !stderr.trim().is_empty() {
+            stderr.to_string()
+        } else {
+            stdout.to_string()
+        };
+
+        Err(diagnostic)
+    };
+
+    let summarize_error = |text: &str| -> String {
+        let lines: Vec<&str> = text.lines().take(10).collect();
+        if lines.is_empty() {
+            "(no compiler diagnostics emitted)".to_string()
+        } else {
+            lines.join(" | ")
+        }
+    };
+
+    let using_source_file = match compile_swift_source(REAL_SWIFT_FILE) {
+        Ok(()) => REAL_SWIFT_FILE,
+        Err(real_error) => {
+            println!(
+                "cargo:warning=Swift bridge compile failed for {}. Falling back to stub bridge.",
+                REAL_SWIFT_FILE
+            );
+            println!(
+                "cargo:warning=Swift compile diagnostics (truncated): {}",
+                summarize_error(&real_error)
+            );
+
+            if let Err(stub_error) = compile_swift_source(STUB_SWIFT_FILE) {
+                panic!(
+                    "swiftc failed to compile both real ({}) and stub ({}) bridge files.\nreal: {}\nstub: {}",
+                    REAL_SWIFT_FILE,
+                    STUB_SWIFT_FILE,
+                    real_error,
+                    stub_error
+                );
+            }
+
+            println!(
+                "cargo:warning=Building with stub bridge: Apple Intelligence and system audio capture are unavailable on this toolchain setup."
+            );
+            STUB_SWIFT_FILE
+        }
+    };
 
     let status = Command::new("libtool")
         .args([
@@ -217,7 +267,7 @@ fn build_apple_intelligence_bridge() {
         .expect("Failed to create static library for Apple Intelligence bridge");
 
     if !status.success() {
-        panic!("libtool failed for Apple Intelligence bridge");
+        panic!("libtool failed for Apple bridge ({using_source_file})");
     }
 
     println!("cargo:rustc-link-search=native={}", out_dir.display());
