@@ -730,6 +730,21 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
     changed
 }
 
+fn ensure_default_bindings(settings: &mut AppSettings) -> bool {
+    let default_bindings = get_default_settings().bindings;
+    let mut changed = false;
+
+    for (key, value) in default_bindings {
+        if !settings.bindings.contains_key(&key) {
+            debug!("Adding missing binding: {}", key);
+            settings.bindings.insert(key, value);
+            changed = true;
+        }
+    }
+
+    changed
+}
+
 pub const SETTINGS_STORE_PATH: &str = "settings_store.json";
 
 pub fn get_default_settings() -> AppSettings {
@@ -892,17 +907,7 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
         match serde_json::from_value::<AppSettings>(settings_value) {
             Ok(mut settings) => {
                 debug!("Found existing settings: {:?}", settings);
-                let default_settings = get_default_settings();
-                let mut updated = false;
-
-                // Merge default bindings into existing settings
-                for (key, value) in default_settings.bindings {
-                    if !settings.bindings.contains_key(&key) {
-                        debug!("Adding missing binding: {}", key);
-                        settings.bindings.insert(key, value);
-                        updated = true;
-                    }
-                }
+                let updated = ensure_default_bindings(&mut settings);
 
                 if updated {
                     debug!("Settings updated with new bindings");
@@ -925,7 +930,7 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    if ensure_post_process_defaults(&mut settings) {
+    if ensure_default_bindings(&mut settings) || ensure_post_process_defaults(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
@@ -949,7 +954,7 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    if ensure_post_process_defaults(&mut settings) {
+    if ensure_default_bindings(&mut settings) || ensure_post_process_defaults(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
