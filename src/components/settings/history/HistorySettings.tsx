@@ -314,6 +314,12 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const [retrying, setRetrying] = useState(false);
 
   const hasTranscription = entry.transcription_text.trim().length > 0;
+  const isMeetingTranscript = entry.file_name.startsWith("handy-meeting-");
+  const shouldTruncateTranscript =
+    isMeetingTranscript && entry.transcription_text.length > 1200;
+  const displayedTranscription = shouldTruncateTranscript
+    ? `${entry.transcription_text.slice(0, 1200).trimEnd()}...`
+    : entry.transcription_text;
 
   const handleLoadAudio = useCallback(
     () => getAudioUrl(entry.file_name),
@@ -435,7 +441,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         {retrying
           ? t("settings.history.transcribing")
           : hasTranscription
-            ? entry.transcription_text
+            ? displayedTranscription
             : t("settings.history.transcriptionFailed")}
       </p>
 

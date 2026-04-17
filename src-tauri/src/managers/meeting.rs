@@ -371,6 +371,38 @@ impl MeetingRecordingManager {
         }
     }
 
+    fn format_timestamp_label(total_seconds: usize) -> String {
+        let hours = total_seconds / 3600;
+        let minutes = (total_seconds % 3600) / 60;
+        let seconds = total_seconds % 60;
+        format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+    }
+
+    fn format_timestamped_segment_line(
+        start_sample: usize,
+        end_sample: usize,
+        text: &str,
+    ) -> Option<String> {
+        let trimmed = text.trim();
+        if trimmed.is_empty() {
+            return None;
+        }
+
+        let start_seconds = start_sample / TRANSCRIPT_SAMPLE_RATE_HZ;
+        let mut end_seconds = end_sample.div_ceil(TRANSCRIPT_SAMPLE_RATE_HZ);
+
+        if end_seconds <= start_seconds {
+            end_seconds = start_seconds + 1;
+        }
+
+        Some(format!(
+            "[{} - {}] {}",
+            Self::format_timestamp_label(start_seconds),
+            Self::format_timestamp_label(end_seconds),
+            trimmed
+        ))
+    }
+
     fn write_transcript_sources_sidecar(
         wav_path: &std::path::Path,
         sources: &MeetingTranscriptSources,
@@ -391,6 +423,20 @@ impl MeetingRecordingManager {
                     sidecar_path, err
                 );
             }
+        }
+    }
+
+    fn write_timestamped_transcript_file(wav_path: &std::path::Path, segments: &[String]) {
+        if segments.is_empty() {
+            return;
+        }
+
+        let transcript_path = wav_path.with_extension("transcript.txt");
+        if let Err(err) = std::fs::write(&transcript_path, segments.join("\n")) {
+            warn!(
+                "Failed to write timestamped meeting transcript at {:?}: {}",
+                transcript_path, err
+            );
         }
     }
 
@@ -563,7 +609,7 @@ impl MeetingRecordingManager {
             return;
         }
 
-        let transcription_text = if settings.meeting_transcribe_on_stop {
+        let (transcription_text, timestamped_segments) = if settings.meeting_transcribe_on_stop {
             transcription_manager.initiate_model_load();
             if source == MeetingAudioSource::MicrophoneAndSystem
                 && !system_samples.is_empty()
@@ -576,6 +622,7 @@ impl MeetingRecordingManager {
                 let mut merged_segments = Vec::new();
                 let mut system_segments = Vec::new();
                 let mut microphone_segments = Vec::new();
+                let mut timestamped_segments = Vec::new();
 
                 for segment_index in 0..segment_count {
                     let start = segment_index * segment_size;
@@ -615,6 +662,12 @@ impl MeetingRecordingManager {
                         Self::merge_segment_transcripts(merge_policy, &system_text, &microphone_text);
 
                     if !merged.is_empty() {
+                        if let Some(timestamped_line) =
+                            Self::format_timestamped_segment_line(start, end, &merged)
+                        {
+                            timestamped_segments.push(timestamped_line);
+                        }
+
                         let is_duplicate = merged_segments
                             .last()
                             .map(|existing: &String| existing == &merged)
@@ -640,6 +693,14 @@ impl MeetingRecordingManager {
                     );
                 }
 
+                if timestamped_segments.is_empty() {
+                    if let Some(timestamped_line) =
+                        Self::format_timestamped_segment_line(0, samples.len(), &merged_text)
+                    {
+                        timestamped_segments.push(timestamped_line);
+                    }
+                }
+
                 Self::write_transcript_sources_sidecar(
                     &wav_path,
                     &MeetingTranscriptSources {
@@ -659,7 +720,7 @@ impl MeetingRecordingManager {
                     },
                 );
 
-                merged_text
+                (merged_text, timestamped_segments)
             } else {
                 let text = Self::transcribe_samples(
                     transcription_manager.as_ref(),
@@ -694,11 +755,18 @@ impl MeetingRecordingManager {
                     },
                 );
 
-                text
+                (
+                    text.clone(),
+                    Self::format_timestamped_segment_line(0, samples.len(), &text)
+                        .into_iter()
+                        .collect(),
+                )
             }
         } else {
-            String::new()
+            (String::new(), Vec::new())
         };
+
+        Self::write_timestamped_transcript_file(&wav_path, &timestamped_segments);
 
         if let Err(err) = history_manager.save_entry(file_name, transcription_text, false, None, None)
         {
@@ -1004,7 +1072,9 @@ impl MeetingRecordingManager {
 
 #[cfg(test)]
 mod tests {
-    use super::{MeetingRecordingManager, MeetingTranscriptMergePolicy};
+    use super::{
+        MeetingRecordingManager, MeetingTranscriptMergePolicy, TRANSCRIPT_SAMPLE_RATE_HZ,
+    };
 
     #[test]
     fn prefers_system_when_transcripts_overlap() {
@@ -1065,5 +1135,29 @@ mod tests {
     fn detects_speech_segments_from_non_silent_audio() {
         let samples = vec![0.0f32, 0.005, -0.004, 0.003, 0.0];
         assert!(MeetingRecordingManager::segment_has_speech(&samples));
+    }
+
+    #[test]
+    fn formats_timestamped_segment_lines() {
+        let line = MeetingRecordingManager::format_timestamped_segment_line(
+            0,
+            (TRANSCRIPT_SAMPLE_RATE_HZ * 4) + 1,
+            "hello world",
+        )
+        .expect("timestamped segment line");
+
+        assert_eq!(line, "[00:00:00 - 00:00:05] hello world");
+    }
+
+    #[test]
+    fn formats_timestamped_segment_lines_with_hour_offsets() {
+        let line = MeetingRecordingManager::format_timestamped_segment_line(
+            TRANSCRIPT_SAMPLE_RATE_HZ * 3661,
+            TRANSCRIPT_SAMPLE_RATE_HZ * 3662,
+            "checkpoint",
+        )
+        .expect("timestamped segment line");
+
+        assert_eq!(line, "[01:01:01 - 01:01:02] checkpoint");
     }
 }

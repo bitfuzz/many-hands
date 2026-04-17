@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, Utc};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use rusqlite::{params, Connection, OptionalExtension};
 use rusqlite_migration::{Migrations, M};
 use serde::{Deserialize, Serialize};
@@ -214,6 +214,34 @@ impl HistoryManager {
         &self.recordings_dir
     }
 
+    fn is_meeting_recording_file_name(file_name: &str) -> bool {
+        file_name.starts_with("handy-meeting-") && file_name.ends_with(".wav")
+    }
+
+    fn ensure_meeting_transcript_file(&self, file_name: &str, transcription_text: &str) {
+        if !Self::is_meeting_recording_file_name(file_name) {
+            return;
+        }
+
+        let trimmed_text = transcription_text.trim();
+        if trimmed_text.is_empty() {
+            return;
+        }
+
+        let transcript_path = self.get_audio_file_path(file_name).with_extension("transcript.txt");
+
+        if transcript_path.exists() {
+            return;
+        }
+
+        if let Err(err) = fs::write(&transcript_path, trimmed_text) {
+            warn!(
+                "Failed to write meeting transcript txt sidecar at {:?}: {}",
+                transcript_path, err
+            );
+        }
+    }
+
     /// Save a new history entry to the database.
     /// The WAV file should already have been written to the recordings directory.
     pub fn save_entry(
@@ -262,6 +290,8 @@ impl HistoryManager {
             post_process_prompt,
             post_process_requested,
         };
+
+        self.ensure_meeting_transcript_file(&entry.file_name, &entry.transcription_text);
 
         debug!("Saved history entry with id {}", entry.id);
 
@@ -313,6 +343,8 @@ impl HistoryManager {
                 params![id],
                 Self::map_history_entry,
             )?;
+
+        self.ensure_meeting_transcript_file(&entry.file_name, &entry.transcription_text);
 
         debug!("Updated transcription for history entry {}", id);
 
@@ -499,6 +531,10 @@ impl HistoryManager {
         let has_more = limit.is_some_and(|lim| entries.len() > lim);
         if has_more {
             entries.pop();
+        }
+
+        for entry in &entries {
+            self.ensure_meeting_transcript_file(&entry.file_name, &entry.transcription_text);
         }
 
         Ok(PaginatedHistory { entries, has_more })
