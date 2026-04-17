@@ -118,11 +118,10 @@ fn build_apple_intelligence_bridge() {
     use std::process::Command;
 
     const REAL_SWIFT_FILE: &str = "swift/apple_intelligence.swift";
-    const STUB_SWIFT_FILE: &str = "swift/apple_intelligence_stub.swift";
     const BRIDGE_HEADER: &str = "swift/apple_intelligence_bridge.h";
 
     println!("cargo:rerun-if-changed={REAL_SWIFT_FILE}");
-    println!("cargo:rerun-if-changed={STUB_SWIFT_FILE}");
+    println!("cargo:rerun-if-changed=swift/apple_intelligence_stub.swift");
     println!("cargo:rerun-if-changed={BRIDGE_HEADER}");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set"));
@@ -145,16 +144,16 @@ fn build_apple_intelligence_bridge() {
         Path::new(&sdk_path).join("System/Library/Frameworks/FoundationModels.framework");
     let has_foundation_models = framework_path.exists();
 
-    let source_file = if has_foundation_models {
+    if has_foundation_models {
         println!("cargo:warning=Building with Apple Intelligence support.");
-        REAL_SWIFT_FILE
     } else {
-        println!("cargo:warning=Apple Intelligence SDK not found. Building with stubs.");
-        STUB_SWIFT_FILE
-    };
+        println!(
+            "cargo:warning=Apple Intelligence SDK not found. Building without Apple Intelligence support."
+        );
+    }
 
-    if !Path::new(source_file).exists() {
-        panic!("Source file {} is missing!", source_file);
+    if !Path::new(REAL_SWIFT_FILE).exists() {
+        panic!("Source file {} is missing!", REAL_SWIFT_FILE);
     }
 
     let swiftc_path = String::from_utf8(
@@ -188,15 +187,13 @@ fn build_apple_intelligence_bridge() {
         "-O",
     ]);
 
-    if has_foundation_models {
-        // The real implementation uses C bridge types declared in the header.
-        swiftc_cmd.args(["-import-objc-header", BRIDGE_HEADER]);
-    }
+    // The implementation uses C bridge types declared in the header.
+    swiftc_cmd.args(["-import-objc-header", BRIDGE_HEADER]);
 
     let status = swiftc_cmd
         .args([
             "-c",
-            source_file,
+            REAL_SWIFT_FILE,
             "-o",
             object_path
                 .to_str()
@@ -206,7 +203,7 @@ fn build_apple_intelligence_bridge() {
         .expect("Failed to invoke swiftc for Apple Intelligence bridge");
 
     if !status.success() {
-        panic!("swiftc failed to compile {source_file}");
+        panic!("swiftc failed to compile {REAL_SWIFT_FILE}");
     }
 
     let status = Command::new("libtool")

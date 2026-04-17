@@ -3,17 +3,22 @@ import CoreGraphics
 import CoreMedia
 import Dispatch
 import Foundation
+
+#if canImport(FoundationModels)
 import FoundationModels
+#endif
 
 #if canImport(ScreenCaptureKit)
 import ScreenCaptureKit
 #endif
 
+#if canImport(FoundationModels)
 @available(macOS 26.0, *)
 @Generable
 private struct CleanedTranscript: Sendable {
     let cleanedText: String
 }
+#endif
 
 // MARK: - Swift implementation for Apple LLM integration
 // This file is compiled via Cargo build script for Apple Silicon targets
@@ -44,6 +49,7 @@ private func truncatedText(_ text: String, limit: Int) -> String {
 
 @_cdecl("is_apple_intelligence_available")
 public func isAppleIntelligenceAvailable() -> Int32 {
+#if canImport(FoundationModels)
     guard #available(macOS 26.0, *) else {
         return 0
     }
@@ -55,6 +61,9 @@ public func isAppleIntelligenceAvailable() -> Int32 {
     case .unavailable:
         return 0
     }
+#else
+    return 0
+#endif
 }
 
 @_cdecl("process_text_with_system_prompt_apple")
@@ -68,6 +77,7 @@ public func processTextWithSystemPrompt(
     let responsePtr = ResponsePointer.allocate(capacity: 1)
     responsePtr.initialize(to: AppleLLMResponse(response: nil, success: 0, error_message: nil))
 
+#if canImport(FoundationModels)
     guard #available(macOS 26.0, *) else {
         responsePtr.pointee.error_message = duplicateCString(
             "Apple Intelligence requires macOS 26 or newer."
@@ -133,6 +143,11 @@ public func processTextWithSystemPrompt(
     }
 
     return responsePtr
+#else
+    let msg = "Apple Intelligence is not available in this build (SDK requirement not met)."
+    responsePtr.pointee.error_message = duplicateCString(msg)
+    return responsePtr
+#endif
 }
 
 @_cdecl("free_apple_llm_response")
